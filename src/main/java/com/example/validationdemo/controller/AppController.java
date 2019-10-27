@@ -3,18 +3,15 @@ package com.example.validationdemo.controller;
 import com.example.validationdemo.model.Car;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
-import org.springframework.validation.ObjectError;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.*;
 
-import javax.validation.ConstraintViolation;
-import javax.validation.Validation;
-import javax.validation.Validator;
-import javax.validation.ValidatorFactory;
+import javax.validation.*;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/app")
@@ -27,8 +24,8 @@ public class AppController {
         validator = validatorFactory.getValidator();
     }
 
-    @RequestMapping(method = RequestMethod.POST)
-    public List<ObjectError> setupCar(@RequestBody Car car, BindingResult result) {
+    @RequestMapping(value = "cojones1", method = RequestMethod.POST)
+    public Collection<?> setupCar(@RequestBody Car car, BindingResult result) {
         Set<ConstraintViolation<Car>> violations = validator.validate(car);
 
         for (ConstraintViolation<Car> violation : violations) {
@@ -43,6 +40,23 @@ public class AppController {
         if (result.hasErrors()) {
             return result.getAllErrors();
         }
-        return null;
+
+        Collection<Car> cars = new ArrayList<>();
+        cars.add(car);
+        return cars;
     }
+
+    @RequestMapping(value = "cojones2", method = RequestMethod.POST)
+    public Car getCojones2(@Valid @RequestBody Car car){
+        return car;
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    Collection<?> exceptionHandler(MethodArgumentNotValidException e){
+
+        Collection<FieldError> fieldErrors = e.getBindingResult().getFieldErrors();
+        Collection<FieldError> errors = fieldErrors.stream().map(fieldError -> new FieldError(fieldError.getObjectName(), fieldError.getField(), fieldError.getDefaultMessage())).collect(Collectors.toList());
+        return errors;
+    }
+
 }
