@@ -1,64 +1,55 @@
-package com.example.validationdemo.controller;
+package com.example.validationdemo.service;
 
-import com.example.validationdemo.model.Car;
-import com.example.validationdemo.service.AppService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.validationdemo.model.RestResponseData;
+import org.springframework.stereotype.Service;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.client.RestTemplate;
 
-import javax.validation.*;
+import javax.validation.ConstraintViolation;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@RestController
-@RequestMapping("/app")
-public class AppController {
+@Service
+public class AppService {
 
     private Validator validator;
+    RestTemplate restTemplate = new RestTemplate();
 
-    @Autowired
-    private AppService service;
-
-    public AppController() {
+    public AppService() {
         ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory();
         validator = validatorFactory.getValidator();
     }
 
-    @RequestMapping(value = "cojones1", method = RequestMethod.POST)
-    public Collection<?> setupCar(@RequestBody Car car, BindingResult result) {
+    public Collection<?> getIds(String id, BindingResult result) {
 
-        Set<ConstraintViolation<Car>> violations = validator.validate(car);
+        RestResponseData restResponseData = restTemplate.getForObject("http://arest.me/api/sites/" + id, RestResponseData.class);
 
-        for (ConstraintViolation<Car> violation : violations) {
+        Set<ConstraintViolation<RestResponseData>> violations = validator.validate(restResponseData);
+
+        for (ConstraintViolation<RestResponseData> violation : violations) {
 
             String propertyPath = violation.getPropertyPath().toString();
             String message = violation.getMessage();
             // Add JSR-303 errors to BindingResult
             // This allows Spring to display them in view via a FieldError
-            result.addError(new FieldError("car", propertyPath,
+            result.addError(new FieldError("restResponseData", propertyPath,
                     "Invalid " + propertyPath + "(" + message + ")"));
         }
         if (result.hasErrors()) {
             return result.getAllErrors();
         }
 
-        Collection<Car> cars = new ArrayList<>();
-        cars.add(car);
-        return cars;
-    }
-
-    @RequestMapping(value = "cojones2", method = RequestMethod.POST)
-    public Car getCojones2(@Valid @RequestBody Car car){
-        return car;
-    }
-
-    @RequestMapping("/ebro/{id}")
-    public Collection<?> getIds(@RequestBody Object o, @PathVariable ("id") String id, BindingResult result) throws Exception {
-        return service.getIds(id, result);
+        Collection<RestResponseData> responseData = new ArrayList<>();
+        responseData.add(restResponseData);
+        return responseData;
 
     }
 
