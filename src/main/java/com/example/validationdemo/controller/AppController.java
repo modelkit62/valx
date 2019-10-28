@@ -10,8 +10,10 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 @RestController
@@ -69,4 +71,25 @@ public class AppController {
         return errors;
     }
 
+
+    @RequestMapping("/x")
+    public String getNumbers() {
+
+        int[] lottery = new int[2];
+        int randomNum;
+
+        for (int i = 0; i < 2; i++) {
+            randomNum = ThreadLocalRandom.current().nextInt(1, 13);
+            for (int x = 0; x < i; x++) {
+                if (lottery[x] == randomNum || lottery[x] == 0)
+                {
+                    randomNum = ThreadLocalRandom.current().nextInt(1, 13);
+                    x = -1; // restart the loop
+                }
+
+            }
+            lottery[i] = randomNum;
+        }
+        return Arrays.toString(lottery);
+    }
 }
